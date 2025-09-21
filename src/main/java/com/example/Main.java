@@ -4,46 +4,70 @@ import com.example.api.ElpriserAPI;
 
 import javax.xml.transform.Source;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Scanner;
 
 public class Main {
+
+    // Framtida fix
+    //private static final DateTimeFormatter HH_FORMAT = DateTimeFormatter("HH");
+
+
     public static void main(String[] args) {
 
+
         ElpriserAPI elpriserAPI = new ElpriserAPI();
-        ElpriserAPI.Prisklass myZone = ElpriserAPI.Prisklass.SE4;
+        ElpriserAPI.Prisklass myZone = ElpriserAPI.Prisklass.SE3;
 
-
-
-
-
-        // Kalla på metoden och spara returvärdet i en variabel
         List<ElpriserAPI.Elpris> todayPrices = priceToday(elpriserAPI, myZone);
         List<ElpriserAPI.Elpris> priceTomorrow = priceTomorrow(elpriserAPI, myZone);
 
-        //Loop för dagens elpriser
-        //for (ElpriserAPI.Elpris elpris : todayPrices) {
-        //System.out.println("Mellan " + elpris.timeStart() + " - " + elpris.timeEnd() + " är priset " + elpris.sekPerKWh() + " öre/kWh");
-        //  }
+        //Front
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Vad vill du?");
+        String villDu = scanner.next();
 
-        //Loop för morgondagens priser
-        //for (ElpriserAPI.Elpris elpris : priceTomorrow) {
-        //  System.out.println("Mellan " + elpris.timeStart() + " - " + elpris.timeEnd() + " är priset " + elpris.sekPerKWh() + " öre/kWh");
-        //}
+        if (villDu.equals("help")){
+            printHelp();
+        }
 
-        // Skriv ut dagens snittpris
-        //System.out.println("Dagens snittpris är " + meanPrice(todayPrices));
+        if (villDu.equals("--prisIdag")){
+            System.out.println("Dagens snittpris är " + meanPrice(todayPrices));
+        }
 
-        //Skriv ut morgondagens snittpris
-        //System.out.println("Morgondagens snittpris är " + meanPrice(priceTomorrow));
+        if (villDu.equals("--prisImorgon")){
+            System.out.println("Morgondagens snittpris är " + meanPrice(priceTomorrow));
+        }
 
-        // Dagens billigaste timme
-        //System.out.println("Dagens billigaste timme är " + minPrice(todayPrices));
 
-        //Dagens dyraste timme
-        //System.out.println("Dagens dyraste timme är " + maxPrice(todayPrices));
+        if(villDu.equals("--dagensPriser")) {
+            for (ElpriserAPI.Elpris elpris : todayPrices) {
+                System.out.printf("Mellan %s - %s är priset %.3f öre/kWh i %s%n", elpris.timeStart(), elpris.timeEnd(), elpris.sekPerKWh(), myZone);
+            }
+        }
+
+        if (villDu.equals("--morgonDagensPriser")){
+            for (ElpriserAPI.Elpris elpris : priceTomorrow) {
+                System.out.println("Mellan " + elpris.timeStart() + " - " + elpris.timeEnd() + " är priset " + elpris.sekPerKWh() + " öre/kWh i " + myZone);
+            }
+        }
+
+        if (villDu.equals("--dyrastePriset")) {
+            System.out.println("Dagens dyraste timme är " + maxPrice(todayPrices));
+        }
+
+        if (villDu.equals("--dagensBilligaste")){
+            System.out.println("Dagens billigaste timme är " + minPrice(todayPrices));
+        }
+
 
 
     }
+
+    // METODER
+
+
 
     // Dagens pris
     private static List<ElpriserAPI.Elpris> priceToday(ElpriserAPI elpriserAPI, ElpriserAPI.Prisklass zon) {
@@ -98,9 +122,6 @@ public class Main {
         System.out.println("--charging 2h|4h|8h (optional, to find optimal charging windows)");
         System.out.println("--help (optional, to display usage information)");
     }
-
-
-
 
 
 }
