@@ -129,8 +129,8 @@ public class Main {
 
 
     /// //////////////////////////  MAIN  ///////////////////////////////////////////
+    private static final Locale PRINT_LOCALE = Locale.US;
 
-    public static final Locale SWEDISH = new Locale("sv", "SE");
 
     public static void main(String[] args) {
 
