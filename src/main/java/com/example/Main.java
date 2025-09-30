@@ -30,7 +30,7 @@ public class Main {
         double oresPris = minPrice.sekPerKWh() * 100;
         String start = minPrice.timeStart().format(DateTimeFormatter.ofPattern("HH"));
         String end = minPrice.timeEnd().format(DateTimeFormatter.ofPattern("HH"));
-        System.out.printf("Lägsta pris: %s-%s %.2fs öre\n", start, end, oresPris);
+        System.out.printf(PRINT_LOCALE,"Lägsta pris: %s-%s %.2fs öre\n", start, end, oresPris);
 
 
     }
@@ -51,7 +51,7 @@ public class Main {
         String start = maxPrice.timeStart().format(DateTimeFormatter.ofPattern("HH"));
         String end = maxPrice.timeEnd().format(DateTimeFormatter.ofPattern("HH"));
 
-        System.out.printf("Högsta pris: %s-%s %.2fs öre\n", start, end, oresPris);
+        System.out.printf(PRINT_LOCALE,"Högsta pris: %s-%s %.2fs öre\n", start, end, oresPris);
 
     }
 
@@ -67,7 +67,7 @@ public class Main {
         }
 
         double medel = (sum / dagensPriser.size()) * 100;
-        System.out.printf("Medelpris: %.2fs öre", medel);
+        System.out.printf(PRINT_LOCALE,"Medelpris: %.2fs öre", medel);
     }
 
     public static void printSorted(List<ElpriserAPI.Elpris> dagensPriser) {
@@ -82,7 +82,7 @@ public class Main {
         for (ElpriserAPI.Elpris pris : dagensPriser) {
             double prisIOre = pris.sekPerKWh() * 100;
 
-            System.out.printf("%s-%s %.2f öre\n", pris.timeStart().format(DateTimeFormatter.ofPattern("HH")), pris.timeEnd().format(DateTimeFormatter.ofPattern("HH")), prisIOre);
+            System.out.printf(PRINT_LOCALE,"%s-%s %.2f öre\n", pris.timeStart().format(DateTimeFormatter.ofPattern("HH")), pris.timeEnd().format(DateTimeFormatter.ofPattern("HH")), prisIOre);
         }
     }
 
@@ -112,7 +112,7 @@ public class Main {
 
         ElpriserAPI.Elpris start = samladePriser.get(startTid); //Set start time
         double oresPris = average * 100;
-        System.out.printf("Påbörja laddning kl %s för %d timmars laddning\nMedelpris för fönster: %.2f öre"
+        System.out.printf(PRINT_LOCALE,"Påbörja laddning kl %s för %d timmars laddning\nMedelpris för fönster: %.2f öre"
                 ,start.timeStart().format(DateTimeFormatter.ofPattern("HH:mm")), laddTid, oresPris);
     }
 
