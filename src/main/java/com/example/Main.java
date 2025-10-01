@@ -2,6 +2,7 @@ package com.example;
 import com.example.api.ElpriserAPI;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public class Main {
 
     public static final Locale SWEDISH = new Locale("sv", "SE");
     public static NumberFormat nf = NumberFormat.getNumberInstance(SWEDISH);
+    private static final LocalTime PRIS_RELEASE_TIME = LocalTime.of(13, 0);
 
     public static void printMin(List<ElpriserAPI.Elpris> dagensPriser) {
 
@@ -364,22 +366,38 @@ public class Main {
 
         ElpriserAPI.Prisklass valdZon = ElpriserAPI.Prisklass.valueOf(zon);
         List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdZon);
-        List<ElpriserAPI.Elpris> morgonDagensPriser = elpriserAPI.getPriser(datum.plusDays(1), valdZon); //
 
-        // Vi samlar alla priser i en ny lista för laddning över tolvslaget.
-        List<ElpriserAPI.Elpris> allaPriser =  new ArrayList<>();
-        allaPriser.addAll(dagensPriser);
-        allaPriser.addAll(morgonDagensPriser);
+
+        // För tillgång till båda dagarnas prislista om kl är efter 13:00
+        List<ElpriserAPI.Elpris> aktuellaPriser = dagensPriser;
+        boolean isAfterReleaseTime = LocalTime.now().isAfter(PRIS_RELEASE_TIME) || LocalTime.now().equals(PRIS_RELEASE_TIME);
+
+        if (laddTid == 0 && isAfterReleaseTime) { // Efter 13
+            List<ElpriserAPI.Elpris> morgondagensPriser = elpriserAPI.getPriser(datum.plusDays(1), valdZon);
+
+            if (!morgondagensPriser.isEmpty()) {
+                // Sammanfoga dagens och morgondagens priser till en enda lista för visning
+                aktuellaPriser = new ArrayList<>();
+                aktuellaPriser.addAll(dagensPriser);
+                aktuellaPriser.addAll(morgondagensPriser);
+
+            }
+        }
 
         // If-sats för Cli
         if (laddTid != 0) {
+            List<ElpriserAPI.Elpris> morgondagensPriser = elpriserAPI.getPriser(datum.plusDays(1), valdZon);
+            List<ElpriserAPI.Elpris> allaPriser =  new ArrayList<>();
+            allaPriser.addAll(dagensPriser);
+            allaPriser.addAll(morgondagensPriser);
+
             chargingHours(allaPriser, laddTid);
         } else if (sorted) {
             printSorted(dagensPriser);
         } else {
-            printMin(dagensPriser);
-            printMax(dagensPriser);
-            printMean(dagensPriser);
+            printMin(aktuellaPriser);
+            printMax(aktuellaPriser);
+            printMean(aktuellaPriser);
         }
     }
 
