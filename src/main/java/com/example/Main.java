@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Scanner;
+import java.time.format.DateTimeParseException;
 
 
 
@@ -34,7 +36,7 @@ public class Main {
         double oresPris = minPrice.sekPerKWh() * 100;
         String start = minPrice.timeStart().format(DateTimeFormatter.ofPattern("HH"));
         String end = minPrice.timeEnd().format(DateTimeFormatter.ofPattern("HH"));
-        System.out.printf("Lägsta pris: %s-%s %s öre", start, end, nf.format(oresPris));
+        System.out.printf("Lägsta pris: %s-%s %s öre \n", start, end, nf.format(oresPris));
 
 
     }
@@ -55,7 +57,7 @@ public class Main {
         String start = maxPrice.timeStart().format(DateTimeFormatter.ofPattern("HH"));
         String end = maxPrice.timeEnd().format(DateTimeFormatter.ofPattern("HH"));
 
-        System.out.printf("Högsta pris: %s-%s %s öre", start, end, nf.format(oresPris));
+        System.out.printf("Högsta pris: %s-%s %s öre \n", start, end, nf.format(oresPris));
 
     }
 
@@ -71,7 +73,7 @@ public class Main {
         }
 
         double medel = (sum / dagensPriser.size()) * 100;
-        System.out.printf("Medelpris: %s öre", nf.format(medel));
+        System.out.printf("Medelpris: %s öre \n", nf.format(medel));
     }
 
     public static void printSorted(List<ElpriserAPI.Elpris> dagensPriser) {
@@ -117,9 +119,10 @@ public class Main {
 
         ElpriserAPI.Elpris start = samladePriser.get(startTid); //Set start time
         double oresPris = average * 100;
-        System.out.printf("Påbörja laddning kl %s för %d timmars laddning\nMedelpris för fönster: %s öre"
+        System.out.printf("Påbörja laddning kl %s för %d timmars laddning\nMedelpris för fönster: %s öre \n"
                 ,start.timeStart().format(DateTimeFormatter.ofPattern("HH:mm")), laddTid, nf.format(oresPris));
     }
+
 
 
     public static void printHelp(){
@@ -129,11 +132,12 @@ public class Main {
         System.out.println("--sorted (optional, to display prices in descending order)");
         System.out.println("--charging 2h|4h|8h (optional, to find optimal charging windows)");
         System.out.println("--help (optional, to display usage information)");
+        System.out.println("--interactive (interactive menu)");
     }
 
     public static void visaHuvudMeny(String zon, LocalDate datum) {
         System.out.println("=========================================");
-        System.out.println("   --  ELPRISKOLL -- ");
+        System.out.printf("ELPRISKOLL - Aktuell Zon: %s, Datum: %s\n", zon, datum.format(DateTimeFormatter.ISO_DATE));
         System.out.println("=========================================");
         System.out.println("1. Visa lägsta, högsta och medelpris");
         System.out.println("2. Visa alla priser sorterade");
@@ -144,6 +148,114 @@ public class Main {
         System.out.println("-----------------------------------------");
         System.out.print("Välj ett alternativ (0-5): ");
     }
+
+    public static void interactiveMenu(ElpriserAPI elpriserAPI) {
+        Scanner scanner = new Scanner(System.in);
+        String zon = "SE3";
+        LocalDate datum = LocalDate.now();
+        boolean running = true;
+
+        while (running) {
+            visaHuvudMeny(zon, datum);
+            String input = scanner.nextLine().trim();
+            int val = Integer.parseInt(input);
+            try {
+
+
+                if (val == 0) {
+                    running = false;
+                    System.out.println("Interaktiv meny avslutad");
+                    continue;
+                }
+
+                // Förbered data för de val som kräver prisdata (1, 2, 3)
+                List<ElpriserAPI.Elpris> dagensPriser = new ArrayList<>();
+                List<ElpriserAPI.Elpris> morgonDagensPriser = new ArrayList<>();
+                List<ElpriserAPI.Elpris> allaPriser = new ArrayList<>();
+
+                if (val >= 1 && val <= 3) { // Vid val 1-3 behöver vi hämta vald datum & zon
+                    System.out.println("\nHämtar priser för zon " + zon + " den " + datum.format(DateTimeFormatter.ISO_DATE));
+                    ElpriserAPI.Prisklass valdZon = ElpriserAPI.Prisklass.valueOf(zon);
+                    dagensPriser = elpriserAPI.getPriser(datum, valdZon);
+
+                    if (val == 3) { // Vid val 3 hämtar vid 48 tim för laddning över tolvslaget
+                        morgonDagensPriser = elpriserAPI.getPriser(datum.plusDays(1), valdZon);
+                        allaPriser.addAll(dagensPriser);
+                        allaPriser.addAll(morgonDagensPriser);
+                    }
+
+                    if (dagensPriser.isEmpty()) {
+                        System.out.println("Kunde inte hämta priser för det valda datumet/zonen.");
+                        continue;
+                    }
+                }
+
+                switch (val) {
+                    case 1:
+                        printMin(dagensPriser);
+                        printMax(dagensPriser);
+                        printMean(dagensPriser);
+                        break;
+                    case 2:
+                        printSorted(dagensPriser);
+                        break;
+                    case 3:
+                        System.out.print("Ange laddtid i timmar (2, 4 eller 8): ");
+                        String tidStr = scanner.nextLine().trim();
+                        try {
+                            int laddTid = Integer.parseInt(tidStr);
+                            if (laddTid == 2 || laddTid == 4 || laddTid == 8) {
+                                chargingHours(allaPriser, laddTid);
+                            } else {
+                                System.out.println("Ogiltigt val. Välj 2, 4 eller 8.");
+                            }
+                        } catch (NumberFormatException e) {
+                            System.out.println("Ogiltig inmatning för laddtid.");
+                        }
+                        break;
+                    case 4:
+                        System.out.print("Ange nytt elområde (SE1, SE2, SE3, SE4): ");
+                        String nyZon = scanner.nextLine().trim().toUpperCase();
+                        if (nyZon.matches("SE[1-4]")) {
+                            zon = nyZon;
+                            System.out.println("Elområde uppdaterat till " + zon + ".");
+                        } else {
+                            System.out.println("Ogiltig zon. Måste vara SE1, SE2, SE3 eller SE4.");
+                        }
+                        break;
+                    case 5:
+                        System.out.print("Ange nytt datum (YYYY-MM-DD, t.ex. 2025-10-31): ");
+                        String nyttDatumStr = scanner.nextLine().trim();
+                        try {
+                            datum = LocalDate.parse(nyttDatumStr, DateTimeFormatter.ISO_DATE);
+                            System.out.println("Datum uppdaterat till " + datum.format(DateTimeFormatter.ISO_DATE) + ".");
+                        } catch (DateTimeParseException e) {
+                            System.out.println("Ogiltigt datumformat. Använd YYYY-MM-DD.");
+                        }
+                        break;
+                    default:
+                        System.out.println("Ogiltigt val. Försök igen.");
+                }
+
+            } catch (NumberFormatException e) {
+                System.out.println("Ogiltig inmatning. Vänligen ange ett nummer (0-5).");
+            } catch (IllegalArgumentException e) {
+                System.out.println("Fel: " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println("Ett oväntat fel uppstod: " + e.getMessage());
+            }
+
+            // Vänta på enter för att se nästa meny
+            if(running && val != 4 && val != 5 && val != 0){
+                System.out.print("Tryck Enter för att återgå till menyn...");
+                scanner.nextLine();
+            }
+
+        }
+        scanner.close();
+    }
+
+
 
 
 
@@ -158,29 +270,32 @@ public class Main {
         String zon = "";
         int laddTid = 0;
         boolean sorted = false;
-        boolean validationError = false;
         LocalDate datum = LocalDate.now();
+
+        if (args.length == 0) {
+            printHelp();
+            return;
+        }
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
 
                     case "--interactive":
-                        visaHuvudMeny(zon,datum);
+                        interactiveMenu(elpriserAPI);
                         return;
 
                     case "--zone":
                         if (i + 1 >= args.length) {
                         System.out.println("Ogiltig zon");
-                        validationError = true;
-                        break;
+                            break;
                         }
                         String valdZon = args[++i].toUpperCase();
 
-                        if (valdZon.equals("SE1") || valdZon.equals("SE2") || valdZon.equals("SE3")  || valdZon.equals("SE4")) {
+                        if (valdZon.matches("SE[1-4]")) {
                         zon = valdZon;
                         }else {
                             System.out.println("Ogiltig zon: " + valdZon);
-                            validationError = true;
+
                         }
 
                         break;
@@ -188,8 +303,7 @@ public class Main {
                     case "--date":
                         if (i + 1 >= args.length) {
                         System.out.println("Ogiltigt datum");
-                        validationError = true;
-                        break;
+                            break;
                          }
                          String valtDatum = args[++i].trim();
 
@@ -197,7 +311,7 @@ public class Main {
                             datum = LocalDate.parse(valtDatum);
                          } else {
                             System.out.println("Ogiltigt datumformat: " + valtDatum);
-                             validationError = true;
+
                             }
                          break;
 
@@ -208,7 +322,7 @@ public class Main {
                         case "--charging":
                         if (i + 1 >= args.length) {
                         System.out.println("Ogiltigt val för laddning, du måste välja 2h, 4h eller 8h");
-                        validationError = true;
+
                         break;
                         }
                         String valdTimStr = args[++i].trim().replace("h", "");
@@ -220,11 +334,11 @@ public class Main {
                             laddTid = valdTim;
                         } else {
                             System.out.println("Ogiltigt val för laddning. Endast 2h, 4h eller 8h tillåts.");
-                            validationError = true;
+
                         }
                         } catch (NumberFormatException e) {
                         System.out.println("Ogiltigt format för laddning: " + valdTimStr);
-                        validationError = true;
+
                         }
                          break;
 
@@ -236,7 +350,7 @@ public class Main {
 
                         default:
                         System.out.println("Okänt argument: " + args[i]);
-                        validationError = true;
+
                          break;
 
 
