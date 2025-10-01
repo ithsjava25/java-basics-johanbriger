@@ -133,7 +133,7 @@ public class Main {
 
     public static void visaHuvudMeny(String zon, LocalDate datum) {
         System.out.println("=========================================");
-        System.out.println("   -  ELPRISKOLL - ");
+        System.out.println("   --  ELPRISKOLL -- ");
         System.out.println("=========================================");
         System.out.println("1. Visa lägsta, högsta och medelpris");
         System.out.println("2. Visa alla priser sorterade");
