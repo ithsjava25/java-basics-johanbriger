@@ -62,10 +62,11 @@ public class Main {
             date = LocalDate.now();
         }
         // Hämta dagens och morgondagens listor
-        ElpriserAPI elpriserAPI = new ElpriserAPI(false); // disable caching
+        ElpriserAPI elpriserAPI = new ElpriserAPI(false);
         List<ElpriserAPI.Elpris> valdaPriser = elpriserAPI.getPriser(date, zone);
         List<ElpriserAPI.Elpris> morgondagensPriser = elpriserAPI.getPriser(date.plusDays(1), zone);
 
+        // Från 94 inputs till 24
         if(valdaPriser.size() == 96){
 
             valdaPriser = convertFrom96(valdaPriser);
@@ -132,18 +133,16 @@ public class Main {
             double eurSum = 0;
             double exrSum = 0;
 
-            // summera fyra kvartstimmar
             for (int j = 0; j < 4; j++) {
                 ElpriserAPI.Elpris p = valdaPriser.get(i + j); sekSum += p.sekPerKWh(); eurSum += p.eurPerKWh(); exrSum += p.exr();
             }
 
-            // medelvärden
             double sekAvg = sekSum / 4.0; double eurAvg = eurSum / 4.0; double exrAvg = exrSum / 4.0;
 
             ElpriserAPI.Elpris first = valdaPriser.get(i);
             ElpriserAPI.Elpris last = valdaPriser.get(i + 3);
 
-            //
+
             ElpriserAPI.Elpris hourly = new ElpriserAPI.Elpris(sekAvg, eurAvg, exrAvg, first.timeStart(), last.timeEnd()
             );
 
@@ -279,13 +278,13 @@ public class Main {
 
         while (running) {
 
-            // --- Visar de aktuella standardvärdena eller användarvalen ---
+            // Visar vald zon och valt datum (Standard är se3 och dagens datum.
             System.out.println("\n--- Interaktiv Meny för ElpriserAPI ---");
             System.out.println("Vald zon: " + currentZone);
             System.out.println("Valt datum: " + currentDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
             System.out.println("------------------------------------");
-            // -----------------------------------------------------------
 
+            // Meny
             System.out.println("1. Välj zon (SE1-SE4)");
             System.out.println("2. Välj datum (YYYY-MM-DD, standard: nuvarande)");
             System.out.println("3. Hämta och visa statistik för:  medel, min, max");
@@ -298,17 +297,17 @@ public class Main {
 
             switch (choice) {
                 case "1":
-                    currentZone = selectZone(scanner); // Uppdaterar det statiska fältet
+                    currentZone = selectZone(scanner);
                     System.out.println("Zon satt till: " + currentZone);
                     break;
                 case "2":
-                    currentDate = selectDate(scanner); // Uppdaterar det statiska fältet
+                    currentDate = selectDate(scanner);
                     System.out.println("Datum satt till: " + currentDate);
                     break;
                 case "3":
                 case "4":
                 case "5":
-                    // Ingen zonkontroll behövs längre eftersom den har ett standardvärde
+
 
                     // Hämta data baserat på de statiska fälten
                     System.out.println("Hämtar priser för " + currentDate + " i zon " + currentZone + "...");
